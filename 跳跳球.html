@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>跳跃球跑酷 | Jumping Ball Runner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg-top: #4fc3f7;
+      --bg-bottom: #e1f5fe;
+      --ground: #4caf50;
+      --accent: #ffca28;
+      --accent-2: #ff7043;
+      --accent-3: #ab47bc;
+      --text-dark: #263238;
+      --text-light: #ffffff;
+      --panel-bg: rgba(255, 255, 255, 0.9);
+      --panel-border: rgba(0, 0, 0, 0.08);
+      --shadow-soft: 0 8px 18px rgba(0, 0, 0, 0.16);
+      --radius-lg: 18px;
+      --radius-pill: 999px;
+      --transition-fast: 0.18s ease-out;
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: linear-gradient(to bottom, var(--bg-top), var(--bg-bottom));
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+    }
+
+    html {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    .game-shell {
+      width: 100%;
+      max-width: 960px;
+      background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.96),
+        rgba(255, 255, 255, 0.9)
+      );
+      border-radius: 26px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+      padding: 18px 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+    }
+
+    @media (max-width: 600px) {
+      .game-shell {
+        padding: 12px;
+        border-radius: 18px;
+      }
+    }
+
+    .game-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .title-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 40%;
+      background: radial-gradient(circle at 30% 30%, #fffde7, #ffca28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .title-icon::before,
+    .title-icon::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .title-icon::before {
+      width: 19px;
+      height: 19px;
+      top: 7px;
+      left: 7px;
+    }
+
+    .title-icon::after {
+      width: 10px;
+      height: 10px;
+      bottom: 6px;
+      right: 8px;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .title-text-main {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: #37474f;
+    }
+
+    .title-text-sub {
+      font-size: 11px;
+      color: #607d8b;
+    }
+
+    .score-panel {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: linear-gradient(
+        135deg,
+        rgba(79, 195, 247, 0.18),
+        rgba(255, 202, 40, 0.18)
+      );
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+    }
+
+    .score-item {
+      padding: 4px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.75);
+      color: #37474f;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .score-label {
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+
+    .score-value {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ef6c00;
+    }
+
+    .btn {
+      border: none;
+      outline: none;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #ff7043, #ffca28);
+      color: var(--text-light);
+      box-shadow: 0 4px 10px rgba(255, 112, 67, 0.65);
+      transform: translateY(0);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+        filter var(--transition-fast), opacity 0.15s ease-out;
+      white-space: nowrap;
+    }
+
+    .btn span.emoji {
+      font-size: 14px;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+      box-shadow: 0 6px 16px rgba(255, 112, 67, 0.8);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(255, 112, 67, 0.7);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #ab47bc, #7e57c2);
+      box-shadow: 0 4px 10px rgba(123, 31, 162, 0.6);
+    }
+
+    .btn-secondary:hover {
+      box-shadow: 0 6px 16px rgba(123, 31, 162, 0.8);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.85);
+      color: #455a64;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    }
+
+    .btn-ghost:hover {
+      filter: brightness(1.05);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+    }
+
+    .game-main {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 1.9fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 820px) {
+      .game-main {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .game-canvas-wrap {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      background: linear-gradient(to bottom, #4fc3f7, #b3e5fc);
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+    }
+
+    canvas#game {
+      width: 100%;
+      height: min(400px, 60vh);
+      display: block;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .overlay-message {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      text-align: center;
+      color: #ffffff;
+      text-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+      padding: 12px;
+    }
+
+    .overlay-message.hidden {
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+    }
+
+    .overlay-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .overlay-subtitle {
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .overlay-hint {
+      font-size: 11px;
+      opacity: 0.95;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: var(--radius-pill);
+      padding: 3px 10px;
+      font-size: 11px;
+      background: rgba(0, 0, 0, 0.26);
+      margin-bottom: 8px;
+    }
+
+    .badge span.emoji {
+      font-size: 13px;
+    }
+
+    .side-panel {
+      background: var(--panel-bg);
+      border-radius: 20px;
+      padding: 10px 12px;
+      border: 1px solid var(--panel-border);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .side-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #546e7a;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .pill-tag {
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 10px;
+      background: rgba(79, 195, 247, 0.15);
+      color: #0277bd;
+      font-weight: 600;
+    }
+
+    .how-to-list {
+      list-style: none;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .how-to-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 3px 4px;
+      border-radius: 10px;
+    }
+
+    .how-to-list li span.bullet {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(255, 202, 40, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+
+    .how-to-list li strong {
+      font-size: 12px;
+      margin-right: 3px;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .chip {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: var(--radius-pill);
+      background: rgba(171, 71, 188, 0.1);
+      color: #6a1b9a;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .chip span.emoji {
+      font-size: 12px;
+    }
+
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+      align-items: center;
+    }
+
+    .tip-text {
+      font-size: 11px;
+      color: #78909c;
+      margin-top: 4px;
+    }
+
+    .footer-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #78909c;
+      margin-top: 2px;
+    }
+
+    .speed-indicator {
+      font-weight: 700;
+      color: #ef6c00;
+    }
+
+    .a11y-label {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: var(--radius-pill);
+      background: rgba(69, 90, 100, 0.08);
+      color: #546e7a;
+    }
+
+    .hidden-visually {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-shell" role="main" aria-label="跳跃球跑酷小游戏">
+    <div class="game-header">
+      <div class="title-block">
+        <div class="title-icon" aria-hidden="true"></div>
+        <div>
+          <div class="title-text-main">跳跃球跑酷</div>
+          <div class="title-text-sub">Jumping Ball Runner · 轻松跑、快乐跳</div>
+        </div>
+      </div>
+      <div class="score-panel" aria-label="当前分数与最高分">
+        <div class="score-item" aria-live="polite">
+          <span class="score-label">Score</span>
+          <span id="score" class="score-value">0</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">Best</span>
+          <span id="bestScore" class="score-value">0</span>
+        </div>
+        <button id="retryButton" class="btn btn-secondary" type="button" style="display: none;">
+          <span class="emoji">🔁</span><span>重试 / Retry</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="game-main">
+      <div class="game-canvas-wrap">
+        <canvas id="game" aria-label="彩色跑酷游戏画面"></canvas>
+        <div id="overlay" class="overlay-message">
+          <div class="badge">
+            <span class="emoji">🟠</span>
+            <span>跳跃球跑酷 · Everyone can play!</span>
+          </div>
+          <div class="overlay-title">点击 / 空格 跳跃！</div>
+          <div class="overlay-subtitle">Tap, click or press SPACE / ↑ to jump over funny obstacles.</div>
+          <div class="overlay-hint">
+            避开方块障碍，跑得越远分数越高。速度会慢慢提升，小心节奏变化！<br />
+            Avoid blocks, stay on the track, and keep your timing as speed increases.
+          </div>
+        </div>
+      </div>
+
+      <aside class="side-panel" aria-label="玩法说明与控制">
+        <div class="side-section-title">
+          <span>玩法 · How to play</span>
+          <span class="pill-tag">Casual · Cartoon · Fun</span>
+        </div>
+        <ul class="how-to-list">
+          <li>
+            <span class="bullet">1</span>
+            <span><strong>跳跃：</strong>点击画面 / 按空格 / ↑ 键来让小球起跳。</span>
+          </li>
+          <li>
+            <span class="bullet">2</span>
+            <span><strong>躲避：</strong>不要撞到彩色方块障碍物，越久不碰到分数越高。</span>
+          </li>
+          <li>
+            <span class="bullet">3</span>
+            <span><strong>加速：</strong>时间越久，跑动速度越快，挑战节奏感与反应力。</span>
+          </li>
+          <li>
+            <span class="bullet">4</span>
+            <span><strong>重试：</strong>失败后点击“重试”按钮，分数会保留最高记录。</span>
+          </li>
+        </ul>
+
+        <div class="side-section-title" style="margin-top: 6px;">
+          <span>特色 · Features</span>
+        </div>
+        <div class="chip-row">
+          <div class="chip"><span class="emoji">🌈</span>多彩视差背景 Parallax</div>
+          <div class="chip"><span class="emoji">🎵</span>趣味音效 Fun sounds</div>
+          <div class="chip"><span class="emoji">📈</span>自动记录高分 Highscore</div>
+          <div class="chip"><span class="emoji">🧸</span>卡通角色 Cartoon style</div>
+          <div class="chip"><span class="emoji">♿</span>键盘 & 点击控制</div>
+        </div>
+
+        <div class="side-section-title" style="margin-top: 6px;">
+          <span>控制 · Controls</span>
+        </div>
+        <div class="controls-row">
+          <button class="btn btn-ghost" type="button" id="jumpButton">
+            <span class="emoji">🕹️</span><span>点击 / Jump</span>
+          </button>
+          <div class="a11y-label">支持键盘、鼠标与触控 · Keyboard, mouse & touch friendly</div>
+        </div>
+        <div class="tip-text">
+          Tip：为减少打扰，音效使用简单合成音；如不想听到，可直接静音系统或浏览器标签。
+        </div>
+
+        <div class="footer-line">
+          <div>速度 Speed：<span id="speedLabel" class="speed-indicator">1.0x</span></div>
+          <div>适合所有人 · Everyone welcome 💖</div>
+        </div>
+      </aside>
+    </div>
+
+    <p class="hidden-visually">
+      游戏说明：本游戏通过简单的点击和键盘操作控制一个可爱的跳跃球，躲避随机生成的卡通障碍物，配有多彩背景与轻松音效，
+      适合所有年龄段玩家。游戏不会包含闪烁频率过高的效果，尽量避免不适。
+    </p>
+  </div>
+
+  <script>
+    // === Canvas & layout ===
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    let viewWidth = 0;
+    let viewHeight = 0;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      viewWidth = rect.width;
+      viewHeight = rect.height;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = viewWidth * dpr;
+      canvas.height = viewHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    // === Game state ===
+    const GROUND_HEIGHT = 70;
+    const GRAVITY = 1800;
+    const JUMP_VELOCITY = -760;
+
+    const BASE_SPEED = 300;
+    const MAX_SPEED = 900;
+    let speedMultiplier = 1.0;
+
+    const MAX_JUMPS = 2;
+    let jumpCount = 0;
+
+    const ball = {
+      x: 130,
+      y: 0,
+      radius: 24,
+      vy: 0,
+      onGround: false,
+      tilt: 0,
+      blinkTimer: 0,
+    };
+
+    let obstacles = [];
+    let spawnTimer = 0;
+    let spawnInterval = 1.25;
+
+    let lastTime = null;
+    let elapsed = 0;
+    let score = 0;
+    let bestScore = parseInt(localStorage.getItem("jumpBall_bestScore") || "0", 10);
+    const scoreEl = document.getElementById("score");
+    const bestScoreEl = document.getElementById("bestScore");
+    bestScoreEl.textContent = bestScore.toString();
+
+    let gameState = "ready"; // 'ready' | 'running' | 'over'
+    const overlayEl = document.getElementById("overlay");
+    const retryButton = document.getElementById("retryButton");
+    const speedLabel = document.getElementById("speedLabel");
+
+    function setOverlayVisible(visible) {
+      if (visible) {
+        overlayEl.classList.remove("hidden");
+      } else {
+        overlayEl.classList.add("hidden");
+      }
+    }
+
+    function resetGame() {
+      gameState = "ready";
+      elapsed = 0;
+      score = 0;
+      speedMultiplier = 1.0;
+      ball.y = viewHeight - GROUND_HEIGHT - ball.radius;
+      ball.vy = 0;
+      ball.onGround = true;
+      ball.tilt = 0;
+      ball.blinkTimer = 0;
+      jumpCount = 0; 
+      obstacles = [];
+      spawnTimer = 0;
+      spawnInterval = 1.25;
+      scoreEl.textContent = "0";
+      speedLabel.textContent = speedMultiplier.toFixed(1) + "x";
+      retryButton.style.display = "none";
+      setOverlayVisible(true);
+    }
+
+    // Initial position
+    resetGame();
+
+    // === Parallax background layers ===
+    const bgLayers = [
+      { speedFactor: 0.2, offset: 0 }, // clouds
+      { speedFactor: 0.45, offset: 0 }, // far hills
+      { speedFactor: 0.75, offset: 0 }, // near hills
+    ];
+
+    // Cloud config
+    const clouds = Array.from({ length: 6 }).map((_, i) => ({
+      x: Math.random() * 600,
+      y: 40 + Math.random() * 120,
+      size: 40 + Math.random() * 50,
+      speedFactor: 0.08 + Math.random() * 0.07,
+    }));
+
+    // === Obstacle spawning ===
+    function spawnObstacle() {
+      const width = 32 + Math.random() * 38;
+      const height = 40 + Math.random() * 50;
+      const y = viewHeight - GROUND_HEIGHT - height;
+      const colorPalette = ["#ff7043", "#29b6f6", "#ab47bc", "#ffee58", "#66bb6a"];
+      const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+      const faceType = Math.random(); // to draw silly faces
+      obstacles.push({
+        x: viewWidth + width + 20,
+        y,
+        width,
+        height,
+        color,
+        faceType,
+      });
+    }
+
+    // === Input handling ===
+    function tryJump() {
+      if (gameState === "over") {
+        // 游戏结束时按一下可以快速重开
+        resetGame();
+        return;
+      }
+
+      if (gameState === "ready") {
+        gameState = "running";
+        setOverlayVisible(false);
+      }
+
+      // 允许在空中再起跳一次：0 -> 1 -> 2
+      if (jumpCount < MAX_JUMPS) {
+        ball.vy = JUMP_VELOCITY;
+        ball.onGround = false;
+        jumpCount++;
+        playSound("jump");
+      }
+    }
+
+    canvas.addEventListener("pointerdown", () => {
+      unlockAudio();
+      tryJump();
+    });
+
+    document.getElementById("jumpButton").addEventListener("click", () => {
+      unlockAudio();
+      tryJump();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space" || e.code === "ArrowUp" || e.key === " " || e.key === "w") {
+        e.preventDefault();
+        unlockAudio();
+        tryJump();
+      }
+      if (e.code === "Enter" && gameState === "over") {
+        resetGame();
+      }
+    });
+
+    retryButton.addEventListener("click", () => {
+      unlockAudio();
+      resetGame();
+    });
+
+    // === Audio (simple Web Audio synthetic beeps) ===
+    let audioCtx = null;
+    function unlockAudio() {
+      if (!audioCtx) {
+        try {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (_) {
+          audioCtx = null;
+        }
+      } else if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+    }
+
+    function playTone({ freq = 440, duration = 0.12, type = "sine", volume = 0.18 }) {
+      if (!audioCtx) return;
+      const ctxLocal = audioCtx;
+      const osc = ctxLocal.createOscillator();
+      const gain = ctxLocal.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctxLocal.currentTime);
+      gain.gain.setValueAtTime(volume, ctxLocal.currentTime);
+      gain.gain.exponentialRampToValueAtTime(
+        Math.max(0.001, volume * 0.05),
+        ctxLocal.currentTime + duration
+      );
+      osc.connect(gain);
+      gain.connect(ctxLocal.destination);
+      osc.start();
+      osc.stop(ctxLocal.currentTime + duration + 0.03);
+    }
+
+    function playSound(kind) {
+      if (!audioCtx) return;
+      if (audioCtx.state === "suspended") return;
+
+      switch (kind) {
+        case "jump":
+          playTone({ freq: 660, duration: 0.11, type: "square", volume: 0.16 });
+          break;
+        case "score":
+          playTone({ freq: 820, duration: 0.12, type: "triangle", volume: 0.15 });
+          break;
+        case "hit":
+          playTone({ freq: 140, duration: 0.18, type: "sawtooth", volume: 0.22 });
+          setTimeout(() => {
+            playTone({ freq: 80, duration: 0.16, type: "square", volume: 0.16 });
+          }, 40);
+          break;
+      }
+    }
+
+    // === Game loop ===
+    function update(dt) {
+      // Parallax offsets (always move a bit for life)
+      const base = BASE_SPEED * dt;
+      bgLayers.forEach((layer) => {
+        layer.offset -= base * layer.speedFactor;
+        if (layer.offset < -viewWidth) {
+          layer.offset += viewWidth;
+        }
+      });
+      clouds.forEach((c) => {
+        c.x -= base * c.speedFactor;
+        if (c.x < -120) {
+          c.x = viewWidth + 80 + Math.random() * 100;
+          c.y = 40 + Math.random() * 120;
+        }
+      });
+
+      if (gameState !== "running") {
+        // idle bounce
+        if (gameState === "ready") {
+          ball.tint = "#ffffff";
+          ball.blinkTimer += dt;
+          ball.y = viewHeight - GROUND_HEIGHT - ball.radius + Math.sin(ball.blinkTimer * 3) * 5;
+        }
+        return;
+      }
+
+      elapsed += dt;
+
+      // Increase speed multiplier over time（更慢的加速曲线）
+      let targetMult;
+
+      // 前 30 秒：几乎不怎么加速，保持 1.0x ~ 1.3x，很轻松
+      if (elapsed < 30) {
+        const easyMax = 1.3;                        // 前期最大 1.3x
+        targetMult = 1 + (elapsed / 30) * (easyMax - 1);
+      } else {
+        // 30 秒之后再慢慢接近“正式难度”
+        const hardMult = 1 + Math.min(1.2, (elapsed - 60) * 0.04);
+        targetMult = hardMult;
+      }
+
+      // 平滑过渡
+      speedMultiplier += (targetMult - speedMultiplier) * 0.02;
+
+      const currentSpeed = Math.min(BASE_SPEED * speedMultiplier, MAX_SPEED);
+      speedLabel.textContent = (currentSpeed / BASE_SPEED).toFixed(1) + "x";
+
+      // Ball physics
+      ball.vy += GRAVITY * dt;
+      ball.y += ball.vy * dt;
+
+      const groundY = viewHeight - GROUND_HEIGHT - ball.radius;
+      if (ball.y > groundY) {
+        ball.y = groundY;
+        ball.vy = 0;
+
+        if (!ball.onGround) {
+          ball.onGround = true;
+        }
+
+        // ★ 一旦落地，重置跳跃计数
+        jumpCount = 0;
+      }
+
+
+      // Tilt based on velocity
+      ball.tilt = ball.vy * 0.0004;
+
+      // Spawn obstacles
+      spawnTimer -= dt;
+      if (spawnTimer <= 0) {
+        spawnObstacle();
+        const minInt = 0.6;
+        const maxInt = 1.8;
+        spawnInterval = Math.max(minInt, maxInt - elapsed * 0.04);
+        spawnTimer = spawnInterval;
+      }
+
+      // Move & clean obstacles
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const ob = obstacles[i];
+        ob.x -= currentSpeed * dt;
+        if (ob.x + ob.width < -50) {
+          obstacles.splice(i, 1);
+        }
+      }
+
+      // Score by time
+      const newScore = Math.floor(elapsed * 10);
+      if (newScore > score) {
+        score = newScore;
+        scoreEl.textContent = score.toString();
+        if (score % 50 === 0) {
+          playSound("score");
+        }
+      }
+
+      // Collision detection
+      for (const ob of obstacles) {
+        if (circleRectCollide(ball, ob)) {
+          onGameOver();
+          break;
+        }
+      }
+    }
+
+    function circleRectCollide(circle, rect) {
+      const cx = circle.x;
+      const cy = circle.y;
+      const r = circle.radius;
+
+      const rx = rect.x;
+      const ry = rect.y;
+      const rw = rect.width;
+      const rh = rect.height;
+
+      const closestX = clamp(cx, rx, rx + rw);
+      const closestY = clamp(cy, ry, ry + rh);
+
+      const dx = cx - closestX;
+      const dy = cy - closestY;
+      return dx * dx + dy * dy < r * r * 0.9; // slightly forgiving
+    }
+
+    function clamp(v, min, max) {
+      return v < min ? min : v > max ? max : v;
+    }
+
+    function onGameOver() {
+      if (gameState === "over") return;
+      gameState = "over";
+      playSound("hit");
+      ball.blinkTimer = 0;
+
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem("jumpBall_bestScore", String(bestScore));
+        bestScoreEl.textContent = bestScore.toString();
+      }
+
+      retryButton.style.display = "inline-flex";
+
+      // Show short game over text in overlay
+      overlayEl.innerHTML = `
+        <div class="badge">
+          <span class="emoji">💥</span>
+          <span>Oops! 碰到障碍啦 · You hit a block</span>
+        </div>
+        <div class="overlay-title">游戏结束 · Game Over</div>
+        <div class="overlay-subtitle">
+          本次得分 Score: <strong>${score}</strong> · 最高 Highscore: <strong>${bestScore}</strong>
+        </div>
+        <div class="overlay-hint">
+          点击“重试”按钮或按 Enter/空格键重新开始冒险。<br/>
+          Tap <b>Retry</b>, press <b>Enter</b> or <b>Space</b> to play again.
+        </div>
+      `;
+      setOverlayVisible(true);
+    }
+
+    // === Drawing ===
+    function draw() {
+      // Sky gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, viewHeight);
+      skyGrad.addColorStop(0, "#4fc3f7");
+      skyGrad.addColorStop(0.4, "#81d4fa");
+      skyGrad.addColorStop(1, "#e1f5fe");
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, viewWidth, viewHeight);
+
+      // Sun
+      const sunX = viewWidth - 80;
+      const sunY = 70;
+      const sunRadius = 30;
+      const sunGrad = ctx.createRadialGradient(
+        sunX,
+        sunY,
+        5,
+        sunX,
+        sunY,
+        sunRadius + 20
+      );
+      sunGrad.addColorStop(0, "#fff9c4");
+      sunGrad.addColorStop(0.4, "#ffeb3b");
+      sunGrad.addColorStop(1, "rgba(255, 241, 118, 0)");
+      ctx.fillStyle = sunGrad;
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, sunRadius + 20, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Clouds
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      clouds.forEach((c) => {
+        drawCloud(c.x + bgLayers[0].offset * 0.2, c.y, c.size);
+      });
+
+      // Hills (far)
+      drawHills("#81c784", 40, bgLayers[1].offset * 0.7, 0.3);
+
+      // Hills (near)
+      drawHills("#43a047", 70, bgLayers[2].offset, 0.55);
+
+      // Ground strip
+      const groundY = viewHeight - GROUND_HEIGHT;
+      const groundGrad = ctx.createLinearGradient(0, groundY, 0, viewHeight);
+      groundGrad.addColorStop(0, "#66bb6a");
+      groundGrad.addColorStop(1, "#2e7d32");
+      ctx.fillStyle = groundGrad;
+      ctx.fillRect(0, groundY, viewWidth, GROUND_HEIGHT);
+
+      // Ground decoration stripes
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = "#a5d6a7";
+      const stripeH = 8;
+      for (let i = 0; i < 3; i++) {
+        ctx.fillRect(
+          ((i * 120 + (bgLayers[2].offset * 1.5)) % (viewWidth + 160)) - 160,
+          groundY + 16 + i * 12,
+          viewWidth + 160,
+          stripeH
+        );
+      }
+      ctx.globalAlpha = 1;
+
+      // Obstacles
+      obstacles.forEach((ob) => {
+        drawObstacle(ob);
+      });
+
+      // Runner ball (cartoon)
+      drawBall();
+
+      // Foreground shade
+      const fgGrad = ctx.createLinearGradient(0, groundY - 20, 0, groundY + 6);
+      fgGrad.addColorStop(0, "rgba(0,0,0,0.15)");
+      fgGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = fgGrad;
+      ctx.fillRect(0, groundY - 20, viewWidth, 26);
+    }
+
+    function drawCloud(x, y, size) {
+      const r = size / 3;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.arc(x + r * 0.9, y - r * 0.6, r * 0.9, 0, Math.PI * 2);
+      ctx.arc(x + r * 1.8, y, r * 1, 0, Math.PI * 2);
+      ctx.arc(x + r, y + r * 0.5, r * 1.1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawHills(color, amplitude, offset, noiseScale) {
+      ctx.fillStyle = color;
+      const baseY = viewHeight - GROUND_HEIGHT - amplitude;
+      ctx.beginPath();
+      ctx.moveTo(0, viewHeight);
+      for (let x = -40; x <= viewWidth + 40; x += 10) {
+        const nx = (x + offset) * noiseScale;
+        const y = baseY + Math.sin(nx * 0.01) * amplitude * 0.45;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(viewWidth + 50, viewHeight);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawObstacle(ob) {
+      // body
+      const radius = 10;
+      const x = ob.x;
+      const y = ob.y;
+      const w = ob.width;
+      const h = ob.height;
+
+      ctx.save();
+      ctx.translate(0, 0);
+
+      // body gradient
+      const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+      grad.addColorStop(0, ob.color);
+      grad.addColorStop(1, "#ffffff");
+      ctx.fillStyle = grad;
+      roundRect(ctx, x, y, w, h, radius);
+      ctx.fill();
+
+      // shadow
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(x + 4, y + h - 6, w, 6);
+      ctx.globalAlpha = 1;
+
+      // silly face
+      const faceY = y + h * 0.25;
+      const centerX = x + w / 2;
+      ctx.strokeStyle = "rgba(0,0,0,0.6)";
+      ctx.lineWidth = 1.6;
+      ctx.lineCap = "round";
+
+      if (ob.faceType < 0.33) {
+        // smiley
+        ctx.beginPath();
+        ctx.arc(centerX - 5, faceY, 2.2, 0, Math.PI * 2);
+        ctx.arc(centerX + 5, faceY, 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0,0,0,0.65)";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(centerX, faceY + 8, 7, 0.15 * Math.PI, 0.85 * Math.PI);
+        ctx.stroke();
+      } else if (ob.faceType < 0.66) {
+        // surprised
+        ctx.beginPath();
+        ctx.arc(centerX - 5, faceY, 1.8, 0, Math.PI * 2);
+        ctx.arc(centerX + 5, faceY, 1.8, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0,0,0,0.65)";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(centerX, faceY + 10, 4, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        // cheeky
+        ctx.beginPath();
+        ctx.arc(centerX - 6, faceY, 2, 0, Math.PI * 2);
+        ctx.arc(centerX + 4, faceY - 1, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0,0,0,0.65)";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(centerX - 4, faceY + 8);
+        ctx.quadraticCurveTo(centerX + 3, faceY + 12, centerX + 10, faceY + 6);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + w - radius, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+      ctx.lineTo(x + w, y + h - radius);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+      ctx.lineTo(x + radius, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function drawBall() {
+      const r = ball.radius;
+      const x = ball.x;
+      const y = ball.y;
+      const tilt = clamp(ball.tilt, -0.3, 0.3);
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(tilt);
+
+      // main body gradient
+      const grad = ctx.createRadialGradient(-r * 0.3, -r * 0.4, r * 0.2, 0, 0, r);
+      grad.addColorStop(0, "#fff8e1");
+      grad.addColorStop(0.4, "#ffca28");
+      grad.addColorStop(0.8, "#ff7043");
+      grad.addColorStop(1, "#f4511e");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // side stripes
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(255,255,255,0.7)";
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.74, -0.8, 0.8);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.55, Math.PI - 0.7, Math.PI + 0.7);
+      ctx.stroke();
+
+      // eyes
+      const eyeOffsetY = -r * 0.15;
+      const eyeOffsetX = r * 0.32;
+      const blinkPhase =
+        gameState === "over" ? 1 : Math.abs(Math.sin((elapsed + ball.blinkTimer) * 3));
+      const eyeOpen = clamp(0.2 + blinkPhase * 0.65, 0.2, 1);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.ellipse(
+        -eyeOffsetX,
+        eyeOffsetY,
+        r * 0.27,
+        r * 0.27 * eyeOpen,
+        0,
+        0,
+        Math.PI * 2
+      );
+      ctx.ellipse(
+        eyeOffsetX,
+        eyeOffsetY,
+        r * 0.27,
+        r * 0.27 * eyeOpen,
+        0,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+
+      ctx.fillStyle = "#263238";
+      const pupilOffsetX = r * 0.06;
+      ctx.beginPath();
+      ctx.arc(-eyeOffsetX + pupilOffsetX, eyeOffsetY, r * 0.1, 0, Math.PI * 2);
+      ctx.arc(eyeOffsetX + pupilOffsetX, eyeOffsetY, r * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+
+      // blush
+      ctx.globalAlpha = 0.65;
+      ctx.fillStyle = "#ff8a80";
+      ctx.beginPath();
+      ctx.ellipse(-eyeOffsetX * 1.2, eyeOffsetY + r * 0.25, r * 0.24, r * 0.15, 0, 0, Math.PI * 2);
+      ctx.ellipse(eyeOffsetX * 1.2, eyeOffsetY + r * 0.25, r * 0.24, r * 0.15, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // mouth
+      ctx.strokeStyle = "#5d4037";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, r * 0.15, r * 0.35, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.stroke();
+
+      // highlight
+      ctx.globalAlpha = 0.8;
+      ctx.fillStyle = "rgba(255,255,255,0.8)";
+      ctx.beginPath();
+      ctx.ellipse(-r * 0.35, -r * 0.4, r * 0.3, r * 0.22, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      ctx.restore();
+
+      // shadow
+      const shadowY = viewHeight - GROUND_HEIGHT - 4;
+      const stretch = ball.onGround ? 1 : 0.7;
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = "#000000";
+      ctx.beginPath();
+      ctx.ellipse(x, shadowY, r * 0.9 * stretch, r * 0.35 * stretch, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    // === Main loop ===
+    function loop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+      lastTime = timestamp;
+
+      update(dt);
+      draw();
+
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+  <div id="landscapeWarning" style="
+         position: fixed;
+         inset: 0;
+         background: #000000e0;
+         color: white;
+         display: none;
+         align-items: center;
+         justify-content: center;
+         flex-direction: column;
+         font-family: sans-serif;
+         z-index: 9999;
+         text-align: center;
+         padding: 20px;
+       ">
+    <div style="font-size:26px; margin-bottom:10px;">🔄 请横屏</div>
+    <div style="font-size:14px; opacity:0.8;">
+      为获得最佳体验，请将设备横过来。<br>
+      Please rotate your device to landscape.
+    </div>
+  </div>
+  <script>
+    function checkOrientation() {
+      const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+
+      const warning = document.getElementById("landscapeWarning");
+
+      if (isPortrait) {
+        warning.style.display = "flex";   // 显示“请横屏”
+      } else {
+        warning.style.display = "none";   // 隐藏
+      }
+    }
+
+    window.addEventListener("orientationchange", checkOrientation);
+    window.addEventListener("resize", checkOrientation);
+
+    // 初次进入也检查一次
+    checkOrientation();
+  </script>
+</body>
+</html>
